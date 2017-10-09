@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Candor | Example</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="assets/js/candor.min.js"></script>
+</head>
+<body>
+
+    <section class="slider">
+        <div class="slider__imgs">
+            <img src="assets/img/slide-1.jpg" alt="">
+            <img src="assets/img/slide-2.jpg" alt="">
+            <img src="assets/img/slide-3.jpg" alt="">
+        </div>
+        <div class="slider__bullets">
+            <span class="active"></span>
+            <span></span>
+            <span></span>
+        </div>
+        <nav class="slider__nav">
+            <div class="slider__nav__prev"></div>
+            <div class="slider__nav__next"></div>
+        </nav>
+    </section>
+    
+    <script>
+        $(function() {
+            candor($('.slider__imgs'), {
+                bullets: $('.slider__bullets'),
+                btnPrev: $('.slider__nav__prev'),
+                btnNext: $('.slider__nav__next'),
+            });
+        });
+    </script>
+    
+</body>
+</html>
