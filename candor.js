@@ -90,7 +90,7 @@ function candor(selector, params) {
                     imgBox.style.marginLeft = '-'+ slideWidth +'px';
                     setTimeout(function() {
                         imgBox.classList.add('candor');
-                    }, 10);
+                    }, 100);
                 }, Number.MIN_VALUE);
             },500);
             // reset count
@@ -124,7 +124,7 @@ function candor(selector, params) {
                     imgBox.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
                     setTimeout(function() {
                         imgBox.classList.add('candor');
-                    }, 10);
+                    }, 100);
                 }, Number.MIN_VALUE);
             },500);
             // update count
