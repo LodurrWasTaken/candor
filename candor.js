@@ -36,30 +36,36 @@ function candor(selector, params) {
     var imgBox = selector[0];
     var count = 1;
 
-    // copy 0 & -1 imgs for infitine
+    // copy 0 & -1 imgs for infinite
     imgBox.insertAdjacentHTML('afterbegin', imgBox.children[imgBox.children.length - 1].outerHTML);
-    imgBox.insertAdjacentHTML('beforeend', imgBox.children[0].outerHTML);
+    imgBox.insertAdjacentHTML('beforeend', imgBox.children[1].outerHTML);
 
     // cache
-    var slidesLen = imgBox.children.length;
+    var slides = imgBox.children;
+    var slidesLen = slides.length;
     var lastSlide = slidesLen - 1;
 
     // set img box & img width/height
     imgBox.style.width = ''+(100 * slidesLen)+'%';
     for (var i = 0; i < slidesLen; i++) {
-        imgBox.children[i].style.width = ''+(100 / slidesLen)+'%';
-        imgBox.children[i].style.height = ''+100+'%';
+        slides[i].style.width = ''+(100 / slidesLen)+'%';
+        slides[i].style.height = '100%';
     }
-
-    // set transition to img box
-    imgBox.style.transition = ''+slidingSpeed+' ease-in-out';
 
     // cache
     var imgBoxWidth = imgBox.offsetWidth;
     var slideWidth = imgBoxWidth / slidesLen;
 
     // shift initial pos due to extra imgs
-    imgBox.style.marginLeft = '-'+slideWidth+'px';
+    imgBox.style.marginLeft = '-'+ slideWidth +'px';
+
+    // create transition class & apply to img box
+    var transition = ''+ slidingSpeed +' ease-in-out';
+    var transitionClass = document.createElement('style');
+    transitionClass.type = 'text/css';
+    transitionClass.innerHTML = '.candor { transition: '+ transition +'; }';
+    document.getElementsByTagName('head')[0].appendChild(transitionClass);
+    imgBox.classList.add('candor');
 
     function slideNext() {
         // update count
@@ -74,18 +80,26 @@ function candor(selector, params) {
         }
         // reset slider when last slide & activate bullet
         if (count === lastSlide) {
-            imgBox.style.marginLeft = '-'+slideWidth+'px';
-            count = 1;
+            // before the last slide in DOM
             if (bullets) {
                 bullets[0].classList.add('active');
             }
+            setTimeout(function() {
+                imgBox.classList.remove('candor');
+                setTimeout(function() {
+                    imgBox.style.marginLeft = '-'+ slideWidth +'px';
+                    setTimeout(function() {
+                        imgBox.classList.add('candor');
+                    }, 10);
+                }, Number.MIN_VALUE);
+            },500);
+            // reset count
+            count = 1;
         } else if (bullets) {
             bullets[count - 1].classList.add('active');
         }
         // recursion
-        if (isAutoplay) {
-            autoplay = setTimeout(slideNext, slideInterval);
-        }
+        startAutoplay();
     }
 
     function slidePrev() {
@@ -101,15 +115,32 @@ function candor(selector, params) {
         }
         // reset slider when last slide & activate bullet
         if (count === 0) {
-            imgBox.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
-            count = lastSlide - 1;
             if (bullets) {
                 bullets[bulletsLen - 1].classList.add('active');
             }
+            setTimeout(function() {
+                imgBox.classList.remove('candor');
+                setTimeout(function() {
+                    imgBox.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
+                    setTimeout(function() {
+                        imgBox.classList.add('candor');
+                    }, 10);
+                }, Number.MIN_VALUE);
+            },500);
+            // update count
+            count = lastSlide - 1;
         } else if (bullets) {
             bullets[count - 1].classList.add('active');
         }
         // recursion
+        startAutoplay();
+    }
+
+    function stopAutoplay() {
+        clearTimeout(autoplay);
+    }
+
+    function startAutoplay() {
         if (isAutoplay) {
             autoplay = setTimeout(slideNext, slideInterval);
         }
@@ -124,7 +155,7 @@ function candor(selector, params) {
     if (bullets) {
         for (var i = 0; i < bulletsLen; i++) {
             bullets[i].addEventListener('click', function() {
-                clearTimeout(autoplay);
+                stopAutoplay();
                 // change bullet
                 for (var j = 0; j < bulletsLen; j++) {
                     bullets[j].classList.remove('active');
@@ -138,7 +169,7 @@ function candor(selector, params) {
                 // change slide
                 imgBox.style.marginLeft = '-'+(slideWidth * count)+'px';
                 // recursion
-                autoplay = setTimeout(slideNext, slideInterval);
+                startAutoplay();
             });
         }
     }
@@ -146,23 +177,61 @@ function candor(selector, params) {
     // slider buttons
     if (btnPrev) {
         btnPrev[0].addEventListener('click', function() {
-            clearTimeout(autoplay);
+            stopAutoplay();
             slidePrev();
         });
     }
     if (btnNext) {
         btnNext[0].addEventListener('click', function() {
-            clearTimeout(autoplay);
+            stopAutoplay();
             slideNext();
         });
     }
+
+    // swipe
+    var x1, delta, returnPos;
+    var initialPos = [];
+    var slideTrigger = slideWidth / 2;
+
+    // get all initial positions of slides
+    for (var i = 0; i < slidesLen; i++) {
+        var pos = -slideWidth * i;
+        initialPos.push(pos);
+    }
+
+    // get initial touch position
+    imgBox.addEventListener('touchstart', function(e) {
+        x1 = e.changedTouches[0].clientX;
+        stopAutoplay();
+        imgBox.classList.remove('candor');
+    });
+
+    // move slides upon swiping
+    imgBox.addEventListener('touchmove', function(e) {
+        delta = e.changedTouches[0].clientX - x1;
+
+        for (var i = 0; i < slidesLen; i++) {
+            if (slides[i] === e.target) {
+                returnPos = initialPos[i];
+                var newPos = initialPos[i] + delta;
+            }
+        }
+        
+        imgBox.style.marginLeft = ''+ newPos +'px';        
+    });
+
+    // slide left/right or return to initial position
+    imgBox.addEventListener('touchend', function() {
+        if (Math.abs(delta) > slideTrigger) {
+            if (delta < 0) {
+                slideNext();
+            } else {
+                slidePrev();
+            }
+        } else {
+            imgBox.style.marginLeft = ''+ returnPos +'px';
+            startAutoplay();
+        }
+        imgBox.classList.add('candor');
+    });
 }
-/*
-OPTIONS:
-btnPrev: selector
-btnNext: selector
-bullets: selector
-autoplay: boolean (default: true)
-animationSpeed: string (default: '.5s')
-interval: number (default: 3000)
-*/
