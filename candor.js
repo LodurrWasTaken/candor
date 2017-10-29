@@ -1,10 +1,13 @@
 function candor(selector, params) {
+    // check selector if exists
+    if (selector.length == 0) return;
     // defaults
     var slideInterval = 3000;
     var slidingSpeed = '.5s';
     var btnPrev = false;
     var btnNext = false;
     var isAutoplay = true;
+    var ms = 500;
 
     // get user parameters
     if (typeof(params) === 'object') {
@@ -15,6 +18,7 @@ function candor(selector, params) {
                     continue;
                 case 'animationSpeed':
                     slidingSpeed = params[key];
+                    ms = parseMs(params[key])
                     continue;
                 case 'bullets':
                     var bullets = params[key][0].children;
@@ -32,32 +36,68 @@ function candor(selector, params) {
             }
         }
     }
+
+    // to get ms for settimeout
+    function parseMs(speed) {
+        var msArr = speed.split('.');
+        // check if element before dot exists & not 0
+        if (msArr[0] !== '' && msArr[0] !== '0') {
+            var firstEl = parseInt(msArr[0]);
+        }
+
+        var lastEl = msArr[msArr.length - 1];
+        lastEl = lastEl.split('');
+        lastEl.pop();
+        var lastElLen = lastEl.length;
+        lastEl = parseInt(lastEl.join(''));
+        var coeff = [1,0,0,0];
+        // count coefficient depending on number of chars after dot
+        for (var i = 0; i < lastElLen; i++) {
+            if (coeff.length > 0) {
+                coeff.pop();
+            }
+        }
+
+        coeff = Number(coeff.join(''));
+        
+        if (firstEl && coeff !== 0) {
+            var val = firstEl * 1000 + lastEl * coeff;
+        } else if (!firstEl && coeff !== 0) {
+            var val = lastEl * coeff;
+        } else {
+            var val = ms;
+        }
+
+        return val;
+    }
+    
     // cache
-    var imgBox = selector[0];
+    var slider = selector[0];
     var count = 1;
 
     // copy 0 & -1 imgs for infinite
-    imgBox.insertAdjacentHTML('afterbegin', imgBox.children[imgBox.children.length - 1].outerHTML);
-    imgBox.insertAdjacentHTML('beforeend', imgBox.children[1].outerHTML);
+    slider.insertAdjacentHTML('afterbegin', slider.children[slider.children.length - 1].outerHTML);
+    slider.insertAdjacentHTML('beforeend', slider.children[1].outerHTML);
 
     // cache
-    var slides = imgBox.children;
+    var slides = slider.children;
     var slidesLen = slides.length;
     var lastSlide = slidesLen - 1;
+    var isDisabled = false;
 
     // set img box & img width/height
-    imgBox.style.width = ''+(100 * slidesLen)+'%';
+    slider.style.width = ''+(100 * slidesLen)+'%';
     for (var i = 0; i < slidesLen; i++) {
         slides[i].style.width = ''+(100 / slidesLen)+'%';
         slides[i].style.height = '100%';
     }
 
     // cache
-    var imgBoxWidth = imgBox.offsetWidth;
-    var slideWidth = imgBoxWidth / slidesLen;
+    var sliderWidth = slider.offsetWidth;
+    var slideWidth = sliderWidth / slidesLen;
 
     // shift initial pos due to extra imgs
-    imgBox.style.marginLeft = '-'+ slideWidth +'px';
+    slider.style.marginLeft = '-'+ slideWidth +'px';
 
     // create transition class & apply to img box
     var transition = ''+ slidingSpeed +' ease-in-out';
@@ -65,13 +105,14 @@ function candor(selector, params) {
     transitionClass.type = 'text/css';
     transitionClass.innerHTML = '.candor { transition: '+ transition +'; }';
     document.getElementsByTagName('head')[0].appendChild(transitionClass);
-    imgBox.classList.add('candor');
+    slider.classList.add('candor');
 
     function slideNext() {
+        if (isDisabled) return;
         // update count
         count++;
         // move slides
-        imgBox.style.marginLeft = '-'+(slideWidth * count)+'px';
+        slider.style.marginLeft = '-'+(slideWidth * count)+'px';
         // reset bullets
         if (bullets) {
             for (var i = 0; i < bulletsLen; i++) {
@@ -85,28 +126,35 @@ function candor(selector, params) {
                 bullets[0].classList.add('active');
             }
             setTimeout(function() {
-                imgBox.classList.remove('candor');
+                slider.classList.remove('candor');
                 setTimeout(function() {
-                    imgBox.style.marginLeft = '-'+ slideWidth +'px';
+                    slider.style.marginLeft = '-'+ slideWidth +'px';
                     setTimeout(function() {
-                        imgBox.classList.add('candor');
+                        slider.classList.add('candor');
                     }, 100);
                 }, Number.MIN_VALUE);
-            },500);
+            },ms);
             // reset count
             count = 1;
         } else if (bullets) {
             bullets[count - 1].classList.add('active');
         }
-        // recursion
+
         startAutoplay();
+
+        // avoid button spamming
+        isDisabled = true;
+        setTimeout(function() {
+            isDisabled = false;
+        }, ms + 100);
     }
 
     function slidePrev() {
+        if (isDisabled) return;
         // update count
         count--;
         // move slides
-        imgBox.style.marginLeft = '-'+(slideWidth * count)+'px';
+        slider.style.marginLeft = '-'+(slideWidth * count)+'px';
         // reset bullets
         if (bullets) {
             for (var i = 0; i < bulletsLen; i++) {
@@ -119,21 +167,27 @@ function candor(selector, params) {
                 bullets[bulletsLen - 1].classList.add('active');
             }
             setTimeout(function() {
-                imgBox.classList.remove('candor');
+                slider.classList.remove('candor');
                 setTimeout(function() {
-                    imgBox.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
+                    slider.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
                     setTimeout(function() {
-                        imgBox.classList.add('candor');
+                        slider.classList.add('candor');
                     }, 100);
                 }, Number.MIN_VALUE);
-            },500);
+            },ms);
             // update count
             count = lastSlide - 1;
         } else if (bullets) {
             bullets[count - 1].classList.add('active');
         }
-        // recursion
+        
         startAutoplay();
+
+        // avoid button spamming
+        isDisabled = true;
+        setTimeout(function() {
+            isDisabled = false;
+        }, ms + 100);
     }
 
     function stopAutoplay() {
@@ -155,20 +209,21 @@ function candor(selector, params) {
     if (bullets) {
         for (var i = 0; i < bulletsLen; i++) {
             bullets[i].addEventListener('click', function() {
+                var _this = this;
                 stopAutoplay();
                 // change bullet
                 for (var j = 0; j < bulletsLen; j++) {
                     bullets[j].classList.remove('active');
-                    this.classList.add('active');
+                    _this.classList.add('active');
 
                     // update count
-                    if (bullets[j] === this) {
+                    if (bullets[j] === _this) {
                         count = j + 1;
                     }
                 }
                 // change slide
-                imgBox.style.marginLeft = '-'+(slideWidth * count)+'px';
-                // recursion
+                slider.style.marginLeft = '-'+(slideWidth * count)+'px';
+                
                 startAutoplay();
             });
         }
@@ -200,28 +255,29 @@ function candor(selector, params) {
     }
 
     // get initial touch position
-    imgBox.addEventListener('touchstart', function(e) {
+    slider.addEventListener('touchstart', function(e) {
         x1 = e.changedTouches[0].clientX;
         stopAutoplay();
-        imgBox.classList.remove('candor');
+        // remove animation
+        slider.classList.remove('candor');
     });
 
     // move slides upon swiping
-    imgBox.addEventListener('touchmove', function(e) {
+    slider.addEventListener('touchmove', function(e) {
         delta = e.changedTouches[0].clientX - x1;
-
+        // get coordinates
         for (var i = 0; i < slidesLen; i++) {
             if (slides[i] === e.target) {
                 returnPos = initialPos[i];
                 var newPos = initialPos[i] + delta;
             }
         }
-        
-        imgBox.style.marginLeft = ''+ newPos +'px';        
+        // move slides
+        slider.style.marginLeft = ''+ newPos +'px';
     });
 
     // slide left/right or return to initial position
-    imgBox.addEventListener('touchend', function() {
+    slider.addEventListener('touchend', function() {
         if (Math.abs(delta) > slideTrigger) {
             if (delta < 0) {
                 slideNext();
@@ -229,9 +285,10 @@ function candor(selector, params) {
                 slidePrev();
             }
         } else {
-            imgBox.style.marginLeft = ''+ returnPos +'px';
+            slider.style.marginLeft = ''+ returnPos +'px';
             startAutoplay();
         }
-        imgBox.classList.add('candor');
+        // add animation
+        slider.classList.add('candor');
     });
 }
