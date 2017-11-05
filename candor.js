@@ -8,6 +8,7 @@ function candor(selector, params) {
     var btnNext = false;
     var isAutoplay = true;
     var ms = 500;
+    var isInfinite = true;
 
     // get user parameters
     if (typeof(params) === 'object') {
@@ -32,7 +33,14 @@ function candor(selector, params) {
                     continue;
                 case 'autoplay':
                     isAutoplay = params[key];
-                    continue; 
+                    continue;
+                case 'infinite':
+                    isInfinite = params[key];
+                    // disable auto play if not infinite
+                    if (!isInfinite) {
+                        isAutoplay = false;
+                    }
+                    continue;
             }
         }
     }
@@ -73,11 +81,17 @@ function candor(selector, params) {
     
     // cache
     var slider = selector[0];
-    var count = 1;
+    if (isInfinite) {
+        var count = 1;
+    } else {
+        var count = 0;
+    }
 
-    // copy 0 & -1 imgs for infinite
-    slider.insertAdjacentHTML('afterbegin', slider.children[slider.children.length - 1].outerHTML);
-    slider.insertAdjacentHTML('beforeend', slider.children[1].outerHTML);
+    // copy 0 & -1 slides for infinite
+    if (isInfinite) {
+        slider.insertAdjacentHTML('afterbegin', slider.children[slider.children.length - 1].outerHTML);
+        slider.insertAdjacentHTML('beforeend', slider.children[1].outerHTML);
+    }
 
     // cache
     var slides = slider.children;
@@ -85,22 +99,23 @@ function candor(selector, params) {
     var lastSlide = slidesLen - 1;
     var isDisabled = false;
 
-    // set img box & img width/height
+    // set slider & slides width
     slider.style.width = ''+(100 * slidesLen)+'%';
     for (var i = 0; i < slidesLen; i++) {
         slides[i].style.width = ''+(100 / slidesLen)+'%';
-        slides[i].style.height = '100%';
     }
 
     // cache
     var sliderWidth = slider.offsetWidth;
     var slideWidth = sliderWidth / slidesLen;
 
-    // shift initial pos due to extra imgs
-    slider.style.marginLeft = '-'+ slideWidth +'px';
+    // shift initial pos due to extra slides
+    if (isInfinite) {
+        slider.style.marginLeft = '-'+ slideWidth +'px';
+    }
 
-    // create transition class & apply to img box
-    var transition = ''+ slidingSpeed +' ease-in-out';
+    // create transition class & apply to slider
+    var transition = ''+ slidingSpeed +' ease-out';
     var transitionClass = document.createElement('style');
     transitionClass.type = 'text/css';
     transitionClass.innerHTML = '.candor { transition: '+ transition +'; }';
@@ -109,40 +124,59 @@ function candor(selector, params) {
 
     function slideNext() {
         if (isDisabled) return;
-        // update count
-        count++;
-        // move slides
-        slider.style.marginLeft = '-'+(slideWidth * count)+'px';
-        // reset bullets
-        if (bullets) {
-            for (var i = 0; i < bulletsLen; i++) {
-                bullets[i].classList.remove('active');
-            }
-        }
-        // reset slider when last slide & activate bullet
-        if (count === lastSlide) {
-            // before the last slide in DOM
+        
+        if (isInfinite) {
+            stopAutoplay();
+            // update count
+            count++;
+            // move slides
+            slider.style.marginLeft = '-'+(slideWidth * count)+'px';
+            // reset bullets
             if (bullets) {
-                bullets[0].classList.add('active');
+                for (var i = 0; i < bulletsLen; i++) {
+                    bullets[i].classList.remove('active');
+                }
             }
-            setTimeout(function() {
-                slider.classList.remove('candor');
+            if (count === lastSlide) {
+                // before the last slide in DOM
+                if (bullets) {
+                    bullets[0].classList.add('active');
+                }
                 setTimeout(function() {
-                    slider.style.marginLeft = '-'+ slideWidth +'px';
+                    slider.classList.remove('candor');
                     setTimeout(function() {
-                        slider.classList.add('candor');
-                    }, 100);
-                }, Number.MIN_VALUE);
-            },ms);
-            // reset count
-            count = 1;
-        } else if (bullets) {
-            bullets[count - 1].classList.add('active');
+                        slider.style.marginLeft = '-'+ slideWidth +'px';
+                        setTimeout(function() {
+                            slider.classList.add('candor');
+                        }, 100);
+                    }, Number.MIN_VALUE);
+                },ms);
+                // reset count
+                count = 1;
+            } else if (bullets) {
+                bullets[count - 1].classList.add('active');
+            }
+
+            startAutoplay();
+        } else {
+            if (count !== lastSlide) {
+                // update count
+                count++;
+                // move slides
+                slider.style.marginLeft = '-'+(slideWidth * count)+'px';
+                // reset bullets
+                if (bullets) {
+                    for (var i = 0; i < bulletsLen; i++) {
+                        bullets[i].classList.remove('active');
+                        bullets[count].classList.add('active');
+                    }
+                }
+            } else {
+               return;
+            }
         }
 
-        startAutoplay();
-
-        // avoid button spamming
+        // avoid button mashing
         isDisabled = true;
         setTimeout(function() {
             isDisabled = false;
@@ -151,39 +185,59 @@ function candor(selector, params) {
 
     function slidePrev() {
         if (isDisabled) return;
-        // update count
-        count--;
-        // move slides
-        slider.style.marginLeft = '-'+(slideWidth * count)+'px';
-        // reset bullets
-        if (bullets) {
-            for (var i = 0; i < bulletsLen; i++) {
-                bullets[i].classList.remove('active');
-            }
-        }
-        // reset slider when last slide & activate bullet
-        if (count === 0) {
-            if (bullets) {
-                bullets[bulletsLen - 1].classList.add('active');
-            }
-            setTimeout(function() {
-                slider.classList.remove('candor');
-                setTimeout(function() {
-                    slider.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
-                    setTimeout(function() {
-                        slider.classList.add('candor');
-                    }, 100);
-                }, Number.MIN_VALUE);
-            },ms);
-            // update count
-            count = lastSlide - 1;
-        } else if (bullets) {
-            bullets[count - 1].classList.add('active');
-        }
         
-        startAutoplay();
+        if (isInfinite) {
+            stopAutoplay();
+            // update count
+            count--;
+            // move slides
+            slider.style.marginLeft = '-'+(slideWidth * count)+'px';
+            // reset bullets
+            if (bullets) {
+                for (var i = 0; i < bulletsLen; i++) {
+                    bullets[i].classList.remove('active');
+                }
+            }
+            // reset slider when last slide & activate bullet
+            if (count === 0) {
+                if (bullets) {
+                    bullets[bulletsLen - 1].classList.add('active');
+                }
+                setTimeout(function() {
+                    slider.classList.remove('candor');
+                    setTimeout(function() {
+                        slider.style.marginLeft = '-'+(slideWidth * (slidesLen - 2))+'px';
+                        setTimeout(function() {
+                            slider.classList.add('candor');
+                        }, 100);
+                    }, Number.MIN_VALUE);
+                },ms);
+                // update count
+                count = lastSlide - 1;
+            } else if (bullets) {
+                bullets[count - 1].classList.add('active');
+            }
+            
+            startAutoplay();
+        } else {
+            if (count !== 0) {
+                // update count
+                count--
+                // move slides
+                slider.style.marginLeft = '-'+(slideWidth * count)+'px';
+                // reset bullets
+                if (bullets) {
+                    for (var i = 0; i < bulletsLen; i++) {
+                        bullets[i].classList.remove('active');
+                        bullets[count].classList.add('active');
+                    }
+                }
+            } else {
+               return;
+            }
+        }
 
-        // avoid button spamming
+        // avoid button mashing
         isDisabled = true;
         setTimeout(function() {
             isDisabled = false;
@@ -218,7 +272,11 @@ function candor(selector, params) {
 
                     // update count
                     if (bullets[j] === _this) {
-                        count = j + 1;
+                        if (isInfinite) {
+                            count = j + 1;
+                        } else {
+                            count = j;
+                        }
                     }
                 }
                 // change slide
@@ -232,13 +290,11 @@ function candor(selector, params) {
     // slider buttons
     if (btnPrev) {
         btnPrev[0].addEventListener('click', function() {
-            stopAutoplay();
             slidePrev();
         });
     }
     if (btnNext) {
         btnNext[0].addEventListener('click', function() {
-            stopAutoplay();
             slideNext();
         });
     }
@@ -246,7 +302,7 @@ function candor(selector, params) {
     // swipe
     var x1, delta, returnPos;
     var initialPos = [];
-    var slideTrigger = slideWidth / 2;
+    var slideTrigger = slideWidth / 6;
 
     // get all initial positions of slides
     for (var i = 0; i < slidesLen; i++) {
@@ -273,11 +329,15 @@ function candor(selector, params) {
             }
         }
         // move slides
-        slider.style.marginLeft = ''+ newPos +'px';
+        if (!isInfinite && count === lastSlide && delta < 0 || !isInfinite && count === 0 && delta > 0) {
+            return false;
+        } else {
+            slider.style.marginLeft = ''+ newPos +'px';
+        }
     });
 
     // slide left/right or return to initial position
-    slider.addEventListener('touchend', function() {
+    slider.addEventListener('touchend', function(e) {
         if (Math.abs(delta) > slideTrigger) {
             if (delta < 0) {
                 slideNext();
