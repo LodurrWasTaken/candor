@@ -1,14 +1,14 @@
 function candor(selector, params) {
     // check selector if exists
-    if (selector.length == 0) return;
+    if (selector.length === 0) return;
     // defaults
     var slideInterval = 3000;
-    var slidingSpeed = '.5s';
+    var slidingSpeed = 300;
     var btnPrev = false;
     var btnNext = false;
     var isAutoplay = true;
-    var ms = 500;
     var isInfinite = true;
+    var stopOnHover = false;
 
     // get user parameters
     if (typeof(params) === 'object') {
@@ -19,7 +19,6 @@ function candor(selector, params) {
                     continue;
                 case 'animationSpeed':
                     slidingSpeed = params[key];
-                    ms = parseMs(params[key])
                     continue;
                 case 'bullets':
                     var bullets = params[key][0].children;
@@ -36,49 +35,19 @@ function candor(selector, params) {
                     continue;
                 case 'infinite':
                     isInfinite = params[key];
-                    // disable auto play if not infinite
-                    if (!isInfinite) {
-                        isAutoplay = false;
-                    }
+                    continue;
+                case 'stopOnHover':
+                    stopOnHover = params[key];
                     continue;
             }
         }
     }
-
-    // to get ms for settimeout
-    function parseMs(speed) {
-        var msArr = speed.split('.');
-        // check if element before dot exists & not 0
-        if (msArr[0] !== '' && msArr[0] !== '0') {
-            var firstEl = parseInt(msArr[0]);
-        }
-
-        var lastEl = msArr[msArr.length - 1];
-        lastEl = lastEl.split('');
-        lastEl.pop();
-        var lastElLen = lastEl.length;
-        lastEl = parseInt(lastEl.join(''));
-        var coeff = [1,0,0,0];
-        // count coefficient depending on number of chars after dot
-        for (var i = 0; i < lastElLen; i++) {
-            if (coeff.length > 0) {
-                coeff.pop();
-            }
-        }
-
-        coeff = Number(coeff.join(''));
-        
-        if (firstEl && coeff !== 0) {
-            var val = firstEl * 1000 + lastEl * coeff;
-        } else if (!firstEl && coeff !== 0) {
-            var val = lastEl * coeff;
-        } else {
-            var val = ms;
-        }
-
-        return val;
-    }
     
+    // reset defaults for exceptional cases
+    if (!isInfinite) {
+        isAutoplay = false;
+    }
+
     // cache
     var slider = selector[0];
     if (isInfinite) {
@@ -109,13 +78,20 @@ function candor(selector, params) {
     var sliderWidth = slider.offsetWidth;
     var slideWidth = sliderWidth / slidesLen;
 
+    // adapt on resize
+    window.addEventListener('resize', function() {
+        sliderWidth = slider.offsetWidth;
+        slideWidth = sliderWidth / slidesLen;
+        slider.style.marginLeft = '-'+(slideWidth * count)+'px';
+    });
+
     // shift initial pos due to extra slides
     if (isInfinite) {
         slider.style.marginLeft = '-'+ slideWidth +'px';
     }
 
     // create transition class & apply to slider
-    var transition = ''+ slidingSpeed +' ease-out';
+    var transition = ''+ slidingSpeed +'ms ease-out';
     var transitionClass = document.createElement('style');
     transitionClass.type = 'text/css';
     transitionClass.innerHTML = '.candor { transition: '+ transition +'; }';
@@ -150,7 +126,7 @@ function candor(selector, params) {
                             slider.classList.add('candor');
                         }, 100);
                     }, Number.MIN_VALUE);
-                },ms);
+                },slidingSpeed);
                 // reset count
                 count = 1;
             } else if (bullets) {
@@ -180,7 +156,7 @@ function candor(selector, params) {
         isDisabled = true;
         setTimeout(function() {
             isDisabled = false;
-        }, ms + 100);
+        }, slidingSpeed + 100);
     }
 
     function slidePrev() {
@@ -211,7 +187,7 @@ function candor(selector, params) {
                             slider.classList.add('candor');
                         }, 100);
                     }, Number.MIN_VALUE);
-                },ms);
+                },slidingSpeed);
                 // update count
                 count = lastSlide - 1;
             } else if (bullets) {
@@ -241,7 +217,7 @@ function candor(selector, params) {
         isDisabled = true;
         setTimeout(function() {
             isDisabled = false;
-        }, ms + 100);
+        }, slidingSpeed + 100);
     }
 
     function stopAutoplay() {
@@ -351,4 +327,15 @@ function candor(selector, params) {
         // add animation
         slider.classList.add('candor');
     });
+
+    // stop autoplay on hover
+    if (stopOnHover && isAutoplay) {
+        slider.addEventListener('mouseenter', function() {
+            stopAutoplay();
+        });
+        slider.addEventListener('mouseleave', function() {
+            startAutoplay();
+        });
+    }
+
 }
