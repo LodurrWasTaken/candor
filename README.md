@@ -23,5 +23,7 @@ btnPrev | selector | n/a
 btnNext | selector | n/a
 bullets | selector | n/a
 autoplay | boolean | true
-animationSpeed | string | '.5s'
+animationSpeed | number | 300
 interval | number | 3000
+stopOnHover | boolean | false
+infinite | boolean | true
