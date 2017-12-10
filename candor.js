@@ -1,6 +1,6 @@
 function candor(selector, params) {
     // check selector if exists
-    if (selector.length === 0) return;
+    if (!selector.length) return;
     // defaults
     var slideInterval = 3000;
     var slidingSpeed = 300;
@@ -11,7 +11,7 @@ function candor(selector, params) {
     var stopOnHover = false;
 
     // get user parameters
-    if (typeof(params) === 'object') {
+    if (params instanceof Object) {
         for (var key in params) {
             switch (key) {
                 case 'interval':
@@ -56,7 +56,7 @@ function candor(selector, params) {
         var count = 0;
     }
 
-    // copy 0 & -1 slides for infinite
+    // copy first & last slides for infinite
     if (isInfinite) {
         slider.insertAdjacentHTML('afterbegin', slider.children[slider.children.length - 1].outerHTML);
         slider.insertAdjacentHTML('beforeend', slider.children[1].outerHTML);
@@ -305,11 +305,14 @@ function candor(selector, params) {
             }
         }
         // move slides
-        if (!isInfinite && count === lastSlide && delta < 0 || !isInfinite && count === 0 && delta > 0) {
-            return false;
-        } else {
-            slider.style.marginLeft = ''+ newPos +'px';
+        if (!isInfinite) {
+            if (count === lastSlide && delta < 0 || count === 0 && delta > 0) {
+                return false;
+            } else {
+                slider.style.marginLeft = ''+ newPos +'px';
+            }
         }
+        
     });
 
     // slide left/right or return to initial position

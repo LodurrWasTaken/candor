@@ -16,11 +16,14 @@
             <img src="assets/img/slide-1.jpg" alt="">
             <img src="assets/img/slide-2.jpg" alt="">
             <img src="assets/img/slide-3.jpg" alt="">
+            <!-- <div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Consequatur quisquam animi, quidem? Perspiciatis alias rem, debitis expedita voluptatum. Quaerat, accusamus.</div>
+            <div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Temporibus in excepturi fugiat facilis. Non doloremque consequuntur beatae praesentium quaerat iure.</div>
+            <div>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Delectus totam neque sunt tenetur corporis nam architecto, nostrum optio necessitatibus consectetur.</div> -->
         </div>
         <div class="slider__bullets">
-            <span class="active"></span>
-            <span></span>
-            <span></span>
+            <img src="assets/img/slide-1.jpg" class="active" alt="">
+            <img src="assets/img/slide-2.jpg" alt="">
+            <img src="assets/img/slide-3.jpg" alt="">
         </div>
         <nav class="slider__nav">
             <div class="slider__nav__prev"></div>
@@ -34,6 +37,8 @@
                 bullets: $('.slider__bullets'),
                 btnPrev: $('.slider__nav__prev'),
                 btnNext: $('.slider__nav__next'),
+                infinite: true,
+                animationSpeed: 300
             });
         });
     </script>
