@@ -1,7 +1,7 @@
 # candor
 ## HTML structure
 ```html
-<div class="container>
+<div class="container">
   <img src="image.jpg">
   <img src="image.jpg">
   <img src="image.jpg">
